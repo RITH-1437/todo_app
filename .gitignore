@@ -1,0 +1,29 @@
+# ── Environment ───────────────────────────────────────────────────────────────
+.env
+
+# ── PHP / Composer ────────────────────────────────────────────────────────────
+vendor/
+composer.lock
+
+# ── Uploads (user-generated content — back up separately) ────────────────────
+public/uploads/avatars/*.jpg
+public/uploads/avatars/*.jpeg
+public/uploads/avatars/*.png
+public/uploads/avatars/*.webp
+!public/uploads/avatars/default-avatar.svg
+
+# ── OS artefacts ─────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Editor / IDE ─────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/
