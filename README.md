@@ -243,6 +243,6 @@ UI inspired by:
 
 # 👨‍💻 Author
 
-Developed by Nairith.
+Developed by Nairith & Lyhor.
 
 If you like this project, feel free to ⭐ the repository.
