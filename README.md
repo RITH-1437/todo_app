@@ -180,7 +180,7 @@ php -S localhost:8080 -t public
 ## 6️⃣ Open Browser
 
 ```txt
-http://localhost:8080
+http://localhost:8080/public/auth/login.php
 ```
 
 ---
