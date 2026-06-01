@@ -31,6 +31,7 @@ $dueDateValue = '';
 $categoryIdValue = $categoryIds[0] ?? '';
 $debugPost = null;
 $debugError = null;
+$taskCreateDebug = defined('TASK_CREATE_DEBUG') ? (bool) constant('TASK_CREATE_DEBUG') : false;
 
 if (isset($_POST['create_task'])) {
 
@@ -171,122 +172,141 @@ if (isset($_POST['create_task'])) {
     <link rel="stylesheet" href="../../assets/css/style.css">
 
     <script>
+        tailwind.config = {
+            darkMode: 'class'
+        };
+    </script>
+
+    <script>
         const savedTheme = localStorage.getItem('theme');
         const initialTheme = savedTheme === 'light' || savedTheme === 'dark'
             ? savedTheme
             : <?= json_encode($themePreference) ?>;
+
         document.documentElement.dataset.theme = initialTheme;
+        document.documentElement.classList.toggle('dark', initialTheme === 'dark');
     </script>
 
     <script src="https://cdn.tailwindcss.com"></script>
 
 </head>
 
-<body id="create-page-body" data-theme="<?= htmlspecialchars($themePreference) ?>" class="create-page min-h-screen transition duration-300">
-    <script>(function(){var t=localStorage.getItem('theme');if(t==='light'||t==='dark'){document.body.dataset.theme=t;document.documentElement.dataset.theme=t;}}());</script>
+<body id="create-page-body" data-theme="<?= htmlspecialchars($themePreference) ?>" class="create-page min-h-screen overflow-x-hidden bg-gradient-to-br from-slate-100 via-white to-slate-200 text-slate-900 dark:from-slate-950 dark:via-slate-900 dark:to-black dark:text-slate-100 transition-colors duration-300">
 
-    <main class="create-page-shell px-4 py-10 sm:px-6 lg:px-8">
+    <script>
+        (function () {
+            const theme = document.documentElement.dataset.theme || <?= json_encode($themePreference) ?>;
+            document.body.dataset.theme = theme;
+            document.body.classList.toggle('dark', theme === 'dark');
+        }());
+    </script>
 
-        <div class="mx-auto w-full max-w-3xl">
+    <main class="create-page-shell min-h-screen bg-transparent px-4 sm:px-6 lg:px-8 transition-colors duration-300">
 
-            <div class="mb-6 flex items-center justify-between">
-                <a href="../index.php" class="create-back-link text-sm font-medium transition">
-                    Back to dashboard
-                </a>
-            </div>
+        <div class="mx-auto flex min-h-screen w-full max-w-5xl items-center justify-center py-8 sm:py-10 lg:py-14 xl:py-16">
 
-            <section class="form-card w-full">
+            <div class="w-full max-w-3xl xl:max-w-4xl">
 
-                <div class="form-card-glow"></div>
-
-                <div class="relative z-10">
-                    <h1 class="create-title mb-2 text-center text-4xl font-bold tracking-tight">
-                        Create Task
-                    </h1>
-
-                    <p class="create-subtitle mx-auto mb-8 max-w-xl text-center text-sm sm:text-base">
-                        Plan your next move with a clean, focused workflow. Add details, set priority, and stay in control.
-                    </p>
-
-                    <form method="POST" class="space-y-5" id="create-task-form">
-
-                        <input type="hidden" name="create_task" value="1">
-
-                        <div class="grid gap-5">
-                            <div>
-                                <label class="form-label" for="task-title">Title</label>
-                                <input id="task-title" type="text" name="title" placeholder="Task title" required
-                                    value="<?= htmlspecialchars($titleValue) ?>"
-                                    class="form-input w-full">
-                            </div>
-
-                            <div>
-                                <label class="form-label" for="task-description">Description</label>
-                                <textarea id="task-description" name="description" placeholder="Task description" rows="5"
-                                    class="form-input w-full resize-y"><?= htmlspecialchars($descriptionValue) ?></textarea>
-                            </div>
-
-                            <div>
-                                <label class="form-label" for="task-due-date">Due date</label>
-                                <input id="task-due-date" type="date" name="due_date"
-                                    value="<?= htmlspecialchars($dueDateValue) ?>"
-                                    class="form-input form-date-input w-full">
-                            </div>
-
-                            <div class="grid gap-5 md:grid-cols-2">
-                                <div>
-                                    <label class="form-label" for="task-category">Category</label>
-                                    <select id="task-category" name="category_id" class="form-input form-select w-full">
-
-                                        <?php foreach ($categories as $category): ?>
-
-                                            <option value="<?= $category['id'] ?>" <?= (string) $categoryIdValue === (string) $category['id'] ? 'selected' : '' ?>>
-
-                                                <?= htmlspecialchars($category['name']) ?>
-
-                                            </option>
-
-                                        <?php endforeach; ?>
-
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label class="form-label" for="task-priority">Priority</label>
-                                    <select id="task-priority" name="priority" class="form-input form-select w-full">
-
-                                        <option value="low" <?= $priorityValue === 'low' ? 'selected' : '' ?>>
-                                            Low Priority
-                                        </option>
-
-                                        <option value="medium" <?= $priorityValue === 'medium' ? 'selected' : '' ?>>
-                                            Medium Priority
-                                        </option>
-
-                                        <option value="high" <?= $priorityValue === 'high' ? 'selected' : '' ?>>
-                                            High Priority
-                                        </option>
-
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        <button type="submit" id="create-task-submit" class="form-button mt-2 w-full">
-                            Add Task
-                        </button>
-
-                    </form>
-
+                <div class="mb-5 flex items-center justify-between sm:mb-6">
+                    <a href="../index.php" class="create-back-link text-sm font-medium transition">
+                        Back to dashboard
+                    </a>
                 </div>
 
-            </section>
+                <section class="form-card w-full overflow-hidden border border-slate-200/80 bg-white/90 shadow-[0_24px_60px_rgba(15,23,42,0.10)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70 dark:shadow-[0_30px_80px_rgba(2,6,23,0.5)] transition-colors duration-300">
+
+                    <div class="form-card-glow"></div>
+
+                    <div class="relative z-10">
+                        <h1 class="create-title mb-2 text-center text-3xl font-bold tracking-tight sm:text-4xl lg:text-[2.6rem]">
+                            Create Task
+                        </h1>
+
+                        <p class="create-subtitle mx-auto mb-6 max-w-2xl px-1 text-center text-xs sm:mb-8 sm:text-sm lg:text-base">
+                            Plan your next move with a clean, focused workflow. Add details, set priority, and stay in control.
+                        </p>
+
+                        <form method="POST" class="space-y-4 sm:space-y-5" id="create-task-form">
+
+                            <input type="hidden" name="create_task" value="1">
+
+                            <div class="grid gap-4 sm:gap-5">
+                                <div>
+                                    <label class="form-label" for="task-title">Title</label>
+                                    <input id="task-title" type="text" name="title" placeholder="Task title" required
+                                        value="<?= htmlspecialchars($titleValue) ?>"
+                                        class="form-input w-full border-slate-200/80 bg-white/90 text-slate-900 dark:border-white/10 dark:bg-slate-800/80 dark:text-slate-50 transition-colors duration-300">
+                                </div>
+
+                                <div>
+                                    <label class="form-label" for="task-description">Description</label>
+                                    <textarea id="task-description" name="description" placeholder="Task description" rows="5"
+                                        class="form-input w-full resize-y border-slate-200/80 bg-white/90 text-slate-900 dark:border-white/10 dark:bg-slate-800/80 dark:text-slate-50 transition-colors duration-300"><?= htmlspecialchars($descriptionValue) ?></textarea>
+                                </div>
+
+                                <div>
+                                    <label class="form-label" for="task-due-date">Due date</label>
+                                    <input id="task-due-date" type="date" name="due_date"
+                                        value="<?= htmlspecialchars($dueDateValue) ?>"
+                                        class="form-input form-date-input w-full border-slate-200/80 bg-white/90 text-slate-900 dark:border-white/10 dark:bg-slate-800/80 dark:text-slate-50 transition-colors duration-300">
+                                </div>
+
+                                <div class="grid gap-4 sm:gap-5 md:grid-cols-2">
+                                    <div>
+                                        <label class="form-label" for="task-category">Category</label>
+                                        <select id="task-category" name="category_id" class="form-input form-select w-full border-slate-200/80 bg-white/90 text-slate-900 dark:border-white/10 dark:bg-slate-800/80 dark:text-slate-50 transition-colors duration-300">
+
+                                            <?php foreach ($categories as $category): ?>
+
+                                                <option value="<?= $category['id'] ?>" <?= (string) $categoryIdValue === (string) $category['id'] ? 'selected' : '' ?>>
+
+                                                    <?= htmlspecialchars($category['name']) ?>
+
+                                                </option>
+
+                                            <?php endforeach; ?>
+
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="form-label" for="task-priority">Priority</label>
+                                        <select id="task-priority" name="priority" class="form-input form-select w-full border-slate-200/80 bg-white/90 text-slate-900 dark:border-white/10 dark:bg-slate-800/80 dark:text-slate-50 transition-colors duration-300">
+
+                                            <option value="low" <?= $priorityValue === 'low' ? 'selected' : '' ?>>
+                                                Low Priority
+                                            </option>
+
+                                            <option value="medium" <?= $priorityValue === 'medium' ? 'selected' : '' ?>>
+                                                Medium Priority
+                                            </option>
+
+                                            <option value="high" <?= $priorityValue === 'high' ? 'selected' : '' ?>>
+                                                High Priority
+                                            </option>
+
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit" id="create-task-submit" class="form-button mt-1 w-full bg-blue-600 text-sm text-white shadow-[0_16px_34px_rgba(37,99,235,0.24)] transition-all duration-300 hover:bg-blue-500 sm:mt-2 sm:text-base dark:bg-blue-600 dark:text-white dark:shadow-[0_18px_42px_rgba(37,99,235,0.34)] dark:hover:bg-blue-500">
+                                Add Task
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                </section>
+
+            </div>
 
         </div>
 
     </main>
 
-    <div id="toast-container" class="fixed top-5 right-5 z-50 space-y-3"></div>
+    <div id="toast-container" class="fixed top-4 left-4 right-4 z-50 space-y-3 sm:top-5 sm:left-auto sm:right-5"></div>
 
     <script src="../../assets/js/toast.js"></script>
     <script src="../../assets/js/create-task.js"></script>
@@ -304,9 +324,9 @@ if (isset($_POST['create_task'])) {
         </script>
     <?php endif; ?>
 
-    <?php if (TASK_CREATE_DEBUG && $debugPost !== null): ?>
+    <?php if ($taskCreateDebug && $debugPost !== null): ?>
         <div class="mx-auto w-full max-w-3xl px-4 pb-8 sm:px-6 lg:px-8">
-            <div class="mt-6 rounded-2xl border border-amber-300/40 bg-amber-50/90 p-4 text-sm text-amber-950 shadow-lg shadow-amber-500/10 backdrop-blur">
+            <div class="mt-6 rounded-2xl border border-slate-200/80 bg-white/90 p-4 text-sm text-slate-700 shadow-lg shadow-slate-200/70 backdrop-blur dark:border-slate-700/70 dark:bg-slate-900/80 dark:text-slate-200 dark:shadow-black/30 transition-colors duration-300">
                 <p class="mb-3 font-semibold">Create Task debug</p>
                 <pre class="overflow-auto whitespace-pre-wrap break-words text-xs leading-6"><?php var_dump($debugPost); ?></pre>
                 <?php if ($debugError): ?>

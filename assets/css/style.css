@@ -52,6 +52,9 @@ input:not(.search-input):not(.profile-input):not(.comment-input):not(.form-input
 .create-page {
     position: relative;
     overflow-x: hidden;
+    min-height: 100svh;
+    isolation: isolate;
+    transition: background-color 220ms ease, color 220ms ease;
 }
 
 .create-page::before {
@@ -59,15 +62,23 @@ input:not(.search-input):not(.profile-input):not(.comment-input):not(.form-input
     position: fixed;
     inset: 0;
     pointer-events: none;
-    z-index: -1;
+    z-index: 0;
+    opacity: 0.95;
 }
 
 .create-page-shell {
     animation: page-fade-in 360ms ease both;
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    min-height: 100svh;
 }
 
 .form-card {
     position: relative;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
     border-radius: 1.75rem;
     border: 1px solid transparent;
     padding: clamp(1.25rem, 2.6vw, 2.35rem);
@@ -114,6 +125,7 @@ input:not(.search-input):not(.profile-input):not(.comment-input):not(.form-input
     font-size: 0.96rem;
     line-height: 1.45;
     width: 100%;
+    max-width: 100%;
     min-height: 3rem;
     outline: none;
 }
@@ -170,11 +182,11 @@ input:not(.search-input):not(.profile-input):not(.comment-input):not(.form-input
     transform: none;
 }
 
-body[data-theme='dark'] .create-page {
-    background: radial-gradient(circle at 12% 12%, rgba(59, 130, 246, 0.24), transparent 42%), linear-gradient(145deg, #020617 0%, #0b1120 42%, #111827 100%);
+body.create-page[data-theme='dark'] {
+    background: linear-gradient(135deg, #020617, #0f172a 48%, #020617);
 }
 
-body[data-theme='dark'] .create-page::before {
+body.create-page[data-theme='dark']::before {
     background: radial-gradient(circle at 80% 8%, rgba(14, 165, 233, 0.2), transparent 36%), radial-gradient(circle at 18% 82%, rgba(37, 99, 235, 0.2), transparent 34%);
 }
 
@@ -266,12 +278,12 @@ body[data-theme='dark'] .form-button:hover:not(:disabled) {
     box-shadow: 0 22px 52px rgba(37, 99, 235, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
-body[data-theme='light'] .create-page {
-    background: radial-gradient(circle at 12% 14%, rgba(59, 130, 246, 0.12), transparent 42%), linear-gradient(145deg, #f8fafc 0%, #eef2f7 44%, #e5ebf4 100%);
+body.create-page[data-theme='light'] {
+    background: linear-gradient(135deg, #f1f5f9, #ffffff 48%, #e2e8f0);
 }
 
-body[data-theme='light'] .create-page::before {
-    background: radial-gradient(circle at 82% 8%, rgba(37, 99, 235, 0.11), transparent 36%), radial-gradient(circle at 18% 82%, rgba(14, 165, 233, 0.09), transparent 34%);
+body.create-page[data-theme='light']::before {
+    background: radial-gradient(circle at 82% 8%, rgba(37, 99, 235, 0.08), transparent 36%), radial-gradient(circle at 18% 82%, rgba(14, 165, 233, 0.08), transparent 34%);
 }
 
 body[data-theme='light'] .form-card {
@@ -359,11 +371,41 @@ body[data-theme='light'] .form-button:hover:not(:disabled) {
 @media (max-width: 640px) {
     .form-card {
         border-radius: 1.5rem;
-        padding: 1.15rem;
+        padding: 1rem;
+    }
+
+    .form-label {
+        margin-bottom: 0.4rem;
+        font-size: 0.76rem;
+    }
+
+    .form-input {
+        min-height: 2.75rem;
+        padding: 0.72rem 0.88rem;
+        font-size: 0.9rem;
+    }
+
+    .form-button {
+        font-size: 0.93rem;
+        padding: 0.82rem 1rem;
     }
 
     .form-button {
         width: 100%;
+    }
+}
+
+@media (min-width: 1536px) {
+    .form-card {
+        box-shadow: 0 34px 90px rgba(15, 23, 42, 0.2);
+    }
+
+    body[data-theme='dark'] .form-card {
+        box-shadow: 0 38px 95px rgba(2, 6, 23, 0.56);
+    }
+
+    body[data-theme='light'] .form-card {
+        box-shadow: 0 30px 78px rgba(15, 23, 42, 0.13);
     }
 }
 

@@ -42,10 +42,13 @@ function applyCreateTaskTheme(body) {
     }
 
     const savedTheme = localStorage.getItem('theme');
-    const theme = savedTheme === 'light' ? 'light' : 'dark';
+    const initialTheme = document.documentElement.dataset.theme || body.dataset.theme || 'dark';
+    const theme = ['light', 'dark'].includes(savedTheme) ? savedTheme : initialTheme;
 
     body.dataset.theme = theme;
     document.documentElement.dataset.theme = theme;
+    body.classList.toggle('dark', theme === 'dark');
+    document.documentElement.classList.toggle('dark', theme === 'dark');
 }
 
 function setCreateTaskLoading(button, isLoading) {

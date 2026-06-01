@@ -1,7 +1,7 @@
 ﻿<?php
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
-require '../includes/auth.php';      // session_start + requireLogin + config/app.php + helpers
-require '../config/database.php';    // $conn PDO
+require '../includes/auth.php';      
+require '../config/database.php';    
 
 // ── Current user ──────────────────────────────────────────────────────────────
 $userColumnsStmt = $conn->query('SHOW COLUMNS FROM users');
