@@ -125,7 +125,7 @@ TodoApp/
 ## 1️⃣ Clone Repository
 
 ```bash
-git clone https://github.com/your-username/taskflow.git
+git clone https://github.com/RITH-1437/todo_app.git
 
 cd taskflow
 ```
