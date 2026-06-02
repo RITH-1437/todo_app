@@ -2,7 +2,8 @@
 
 session_start();
 
-require '../../config/database.php';
+require __DIR__ . '/../../config/app.php';
+require __DIR__ . '/../../config/database.php';
 
 header('Content-Type: application/json');
 
@@ -13,7 +14,7 @@ function jsonResponse(array $payload, int $status = 200): void
     exit();
 }
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
     jsonResponse([
         'success' => false,
         'message' => 'Invalid request method.'
@@ -44,63 +45,70 @@ if ($message === '') {
     ], 422);
 }
 
-$taskStmt = $conn->prepare("
-    SELECT id
-    FROM tasks
-    WHERE id = :task_id
-    AND user_id = :user_id
-    LIMIT 1
-");
+try {
+    $taskStmt = $conn->prepare("
+        SELECT id
+        FROM tasks
+        WHERE id = :task_id
+        AND user_id = :user_id
+        LIMIT 1
+    ");
 
-$taskStmt->execute([
-    ':task_id' => $taskId,
-    ':user_id' => $_SESSION['user_id']
-]);
+    $taskStmt->execute([
+        ':task_id' => $taskId,
+        ':user_id' => $_SESSION['user_id']
+    ]);
 
-if (!$taskStmt->fetch(PDO::FETCH_ASSOC)) {
+    if (!$taskStmt->fetch(PDO::FETCH_ASSOC)) {
+        jsonResponse([
+            'success' => false,
+            'message' => 'Task not found.'
+        ], 404);
+    }
+
+    $insertStmt = $conn->prepare("
+        INSERT INTO comments (
+            task_id,
+            message
+        )
+        VALUES (
+            :task_id,
+            :message
+        )
+    ");
+
+    $insertStmt->execute([
+        ':task_id' => $taskId,
+        ':message' => $message
+    ]);
+
+    $commentId = $conn->lastInsertId();
+
+    $commentStmt = $conn->prepare("
+        SELECT id, message, created_at
+        FROM comments
+        WHERE id = :id
+        LIMIT 1
+    ");
+
+    $commentStmt->execute([
+        ':id' => $commentId
+    ]);
+
+    $comment = $commentStmt->fetch(PDO::FETCH_ASSOC);
+
+    jsonResponse([
+        'success' => true,
+        'message' => 'Comment added successfully',
+        'comment' => [
+            'id'         => (int) $comment['id'],
+            'message'    => $comment['message'],
+            'created_at' => $comment['created_at'],
+        ],
+    ]);
+} catch (PDOException $e) {
     jsonResponse([
         'success' => false,
-        'message' => 'Task not found.'
-    ], 404);
+        'message' => 'Database error.'
+    ], 500);
 }
-
-$insertStmt = $conn->prepare("
-    INSERT INTO comments (
-        task_id,
-        message
-    )
-    VALUES (
-        :task_id,
-        :message
-    )
-");
-
-$insertStmt->execute([
-    ':task_id' => $taskId,
-    ':message' => $message
-]);
-
-$commentId = $conn->lastInsertId();
-
-$commentStmt = $conn->prepare("
-    SELECT id, message, created_at
-    FROM comments
-    WHERE id = :id
-    LIMIT 1
-");
-
-$commentStmt->execute([
-    ':id' => $commentId
-]);
-
-$comment = $commentStmt->fetch(PDO::FETCH_ASSOC);
-
-jsonResponse([
-    'success' => true,
-    'message' => 'Comment added successfully',
-    'comment' => [
-        'id'         => (int) $comment['id'],
-        'message'    => $comment['message'],
-        'created_at' => $comment['created_at'],
-    ],
-]);
