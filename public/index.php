@@ -23,6 +23,33 @@ $themePreference  = ($currentUser['theme_preference'] ?? 'dark') === 'light' ? '
 $status = isset($_GET['status']) ? trim($_GET['status'])  : '';
 $search = isset($_GET['search']) ? trim($_GET['search'])  : '';
 $sort   = isset($_GET['sort'])   ? trim($_GET['sort'])    : 'latest';
+$isAjax = ($_GET['ajax'] ?? '') === 'tasks';
+
+function escapeLikeTerm(string $value): string
+{
+    return addcslashes($value, "\\%_");
+}
+
+function renderTaskListHtml(array $tasks, array $commentsByTask): string
+{
+    ob_start();
+    ?>
+    <div id="task-list" class="<?= !empty($tasks) ? 'grid gap-5' : '' ?>">
+        <?php if (!empty($tasks)): ?>
+            <?php foreach ($tasks as $task):
+                $isOverdue    = isTaskOverdue($task);
+                $taskComments = $commentsByTask[(int) $task['id']] ?? [];
+                require __DIR__ . '/../includes/components/task_card.php';
+            endforeach; ?>
+        <?php else: ?>
+            <div id="no-tasks" class="bg-white p-10 rounded-2xl shadow text-center transition duration-300">
+                <p class="no-tasks-text text-gray-500 text-lg transition duration-300">No tasks found.</p>
+            </div>
+        <?php endif; ?>
+    </div>
+    <?php
+    return trim(ob_get_clean());
+}
 
 // ── Build task query ──────────────────────────────────────────────────────────
 $conditions = ['t.user_id = :user_id'];
@@ -35,8 +62,8 @@ if ($status !== '' && in_array($status, $allowedStatuses, true)) {
 }
 
 if ($search !== '') {
-    $conditions[]      = '(t.title LIKE :search OR t.description LIKE :search)';
-    $params[':search'] = '%' . $search . '%';
+    $conditions[]      = "LOWER(t.title) LIKE LOWER(:search) ESCAPE '\\\\'";
+    $params[':search'] = '%' . escapeLikeTerm($search) . '%';
 }
 
 $where   = 'WHERE ' . implode(' AND ', $conditions);
@@ -94,6 +121,20 @@ foreach ($tasks as $task) {
     }
 }
 
+if ($isAjax) {
+    header('Content-Type: application/json');
+    echo json_encode([
+        'html' => renderTaskListHtml($tasks, $commentsByTask),
+        'stats' => [
+            'total' => $total_tasks,
+            'completed' => $completed_tasks,
+            'pending' => $pending_tasks,
+            'overdue' => $overdue_tasks,
+        ],
+    ]);
+    exit;
+}
+
 // ── Flash toast ───────────────────────────────────────────────────────────────
 $toast = getToast();
 
@@ -110,28 +151,35 @@ require '../includes/layouts/app.php';
 ?>
 
         <!-- Search bar -->
-        <form method="GET" class="mb-6">
+        <form id="search-form" method="GET" class="mb-6">
             <input id="search-input"
                    type="text"
                    name="search"
                    placeholder="Search tasks..."
                    value="<?= htmlspecialchars($search) ?>"
                    class="search-input w-full rounded-2xl px-5 py-4 bg-slate-900/80 text-white placeholder-slate-400 border border-white/10 shadow-[0_18px_45px_rgba(15,23,42,0.24)] hover:shadow-[0_22px_55px_rgba(15,23,42,0.32)] focus:outline-none focus:border-blue-400/50 focus:ring-4 focus:ring-blue-500/20 focus:shadow-[0_24px_65px_rgba(59,130,246,0.18)] transition-all duration-300">
+            <input type="hidden" name="status" value="<?= htmlspecialchars($status) ?>">
+            <input type="hidden" name="sort"   value="<?= htmlspecialchars($sort) ?>">
         </form>
 
         <!-- Filters + sort -->
         <div class="flex justify-between items-center mb-6">
             <div class="flex gap-3">
-                <a href="index.php"
-                   class="px-5 py-2 rounded-lg shadow text-white <?= !isset($_GET['status']) ? 'bg-blue-500' : 'bg-gray-400' ?>">All</a>
-                <a href="?status=pending"
+                <a href="?status=&amp;search=<?= urlencode($search) ?>&amp;sort=<?= urlencode($sort) ?>"
+                   data-status-filter=""
+                   class="px-5 py-2 rounded-lg shadow text-white <?= ($status === '') ? 'bg-blue-500' : 'bg-gray-400' ?>">All</a>
+                <a href="?status=pending&amp;search=<?= urlencode($search) ?>&amp;sort=<?= urlencode($sort) ?>"
+                   data-status-filter="pending"
                    class="px-5 py-2 rounded-lg shadow text-white <?= ($status === 'pending') ? 'bg-yellow-500' : 'bg-gray-400' ?>">Pending</a>
-                <a href="?status=completed"
+                <a href="?status=completed&amp;search=<?= urlencode($search) ?>&amp;sort=<?= urlencode($sort) ?>"
+                   data-status-filter="completed"
                    class="px-5 py-2 rounded-lg shadow text-white <?= ($status === 'completed') ? 'bg-green-500' : 'bg-gray-400' ?>">Completed</a>
             </div>
 
             <div class="flex gap-4 items-center">
-                <form method="GET">
+                <form method="GET" id="sort-form">
+                    <input type="hidden" name="search" value="<?= htmlspecialchars($search) ?>">
+                    <input type="hidden" name="status" value="<?= htmlspecialchars($status) ?>">
                     <select name="sort" id="sort-select"
                             class="bg-gray-700 text-white px-4 py-3 rounded-lg border border-gray-600">
                         <option value="latest"   <?= $sort === 'latest'   ? 'selected' : '' ?>>Latest</option>
@@ -178,18 +226,6 @@ require '../includes/layouts/app.php';
         </div>
 
         <!-- Task list -->
-        <?php if (!empty($tasks)): ?>
-            <div class="grid gap-5">
-                <?php foreach ($tasks as $task):
-                    $isOverdue    = isTaskOverdue($task);
-                    $taskComments = $commentsByTask[(int) $task['id']] ?? [];
-                    require __DIR__ . '/../includes/components/task_card.php';
-                endforeach; ?>
-            </div>
-        <?php else: ?>
-            <div id="no-tasks" class="bg-white p-10 rounded-2xl shadow text-center transition duration-300">
-                <p class="no-tasks-text text-gray-500 text-lg transition duration-300">No tasks found.</p>
-            </div>
-        <?php endif; ?>
+        <?= renderTaskListHtml($tasks, $commentsByTask) ?>
 
 <?php require '../includes/layouts/app_end.php'; ?>

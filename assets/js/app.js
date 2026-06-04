@@ -24,10 +24,11 @@ const chartCards         = document.querySelectorAll('.chart-card');
 const statLabels         = document.querySelectorAll('.stat-label');
 const chartTitles        = document.querySelectorAll('.chart-title');
 const taskCards          = document.querySelectorAll('.task-card');
-const taskTitles         = document.querySelectorAll('.task-title');
-const taskDescriptions   = document.querySelectorAll('.task-description');
+const taskTitles         = document.querySelectorAll('[data-search-title]');
+const taskDescriptions   = document.querySelectorAll('[data-search-desc]');
 const noTasksCard        = document.getElementById('no-tasks');
 const noTasksText        = document.querySelector('.no-tasks-text');
+let searchController     = null;
 
 // ── Tailwind class groups ─────────────────────────────────────────────────────
 const analyticsDarkClasses  = ['bg-white/[0.07]', 'border-white/10', 'shadow-[0_20px_60px_rgba(15,23,42,0.35)]'];
@@ -157,8 +158,116 @@ if (sortSelect) {
     sortSelect.addEventListener('change', () => {
         const url = new URL(window.location.href);
         url.searchParams.set('sort', sortSelect.value);
+        const search = searchInput?.value.trim() || '';
+        if (search) url.searchParams.set('search', search);
+        else url.searchParams.delete('search');
         window.location.href = url.toString();
     });
+}
+
+// ── Real-time search filtering ────────────────────────────────────────────────
+function debounce(fn, delay = 250) {
+    let timer = null;
+    return (...args) => {
+        window.clearTimeout(timer);
+        timer = window.setTimeout(() => fn(...args), delay);
+    };
+}
+
+function getSearchUrl(query) {
+    const url = new URL(window.location.href);
+    const trimmed = (query || '').trim();
+
+    if (trimmed) url.searchParams.set('search', trimmed);
+    else url.searchParams.delete('search');
+
+    if (sortSelect?.value) url.searchParams.set('sort', sortSelect.value);
+    url.searchParams.set('ajax', 'tasks');
+
+    return url;
+}
+
+function updateDashboardUrl(query) {
+    const url = new URL(window.location.href);
+    const trimmed = (query || '').trim();
+
+    if (trimmed) url.searchParams.set('search', trimmed);
+    else url.searchParams.delete('search');
+
+    url.searchParams.delete('ajax');
+    window.history.replaceState({}, '', url.toString());
+    updateFilterLinks(trimmed);
+}
+
+function updateFilterLinks(search) {
+    document.querySelectorAll('[data-status-filter]').forEach(link => {
+        const url = new URL(link.getAttribute('href'), window.location.href);
+        const status = link.dataset.statusFilter || '';
+
+        url.searchParams.set('status', status);
+        if (search) url.searchParams.set('search', search);
+        else url.searchParams.delete('search');
+
+        if (sortSelect?.value) url.searchParams.set('sort', sortSelect.value);
+        link.href = `${url.pathname}${url.search}`;
+    });
+}
+
+function replaceTaskList(html) {
+    const currentList = document.getElementById('task-list');
+    if (!currentList) return;
+
+    const template = document.createElement('template');
+    template.innerHTML = html.trim();
+    const nextList = template.content.firstElementChild;
+    if (nextList) currentList.replaceWith(nextList);
+}
+
+function updateStatValue(cardId, value) {
+    const el = document.querySelector(`#${cardId} [data-stat-value]`);
+    if (el) el.textContent = String(value ?? 0);
+}
+
+function updateDashboardStats(stats = {}) {
+    updateStatValue('total-card', stats.total);
+    updateStatValue('completed-card', stats.completed);
+    updateStatValue('pending-card', stats.pending);
+    updateStatValue('overdue-card', stats.overdue);
+
+    if (window.updateTaskChartCounts) {
+        window.updateTaskChartCounts(stats.completed ?? 0, stats.pending ?? 0, stats.overdue ?? 0);
+    }
+}
+
+async function fetchTasks(query) {
+    if (!searchInput) return;
+    if (searchController) searchController.abort();
+
+    searchController = new AbortController();
+    const url = getSearchUrl(query);
+
+    try {
+        const response = await fetch(url.toString(), {
+            headers: { Accept: 'application/json' },
+            signal: searchController.signal,
+        });
+        const data = await response.json();
+
+        if (!response.ok) throw new Error(data.message || 'Search failed.');
+
+        replaceTaskList(data.html || '');
+        updateDashboardStats(data.stats || {});
+        updateDashboardUrl(query);
+    } catch (error) {
+        if (error.name !== 'AbortError' && window.showToast) {
+            window.showToast(error.message || 'Could not search tasks.', 'error');
+        }
+    }
+}
+
+if (searchInput) {
+    const liveSearch = debounce(() => fetchTasks(searchInput.value), 250);
+    searchInput.addEventListener('input', liveSearch);
 }
 
 // ── Save theme preference to server ──────────────────────────────────────────

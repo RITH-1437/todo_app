@@ -11,12 +11,12 @@
 <div class="task-card <?= $isOverdue ? 'task-card--overdue' : '' ?>">
     <div class="task-card__row">
         <div class="task-card__body">
-            <h2 class="task-card__title <?= $isOverdue ? 'task-card__title--overdue' : '' ?>">
+            <h2 class="task-card__title <?= $isOverdue ? 'task-card__title--overdue' : '' ?>" data-search-title>
                 <?= htmlspecialchars($task['title']) ?>
             </h2>
 
             <?php if (!empty($task['description'])): ?>
-                <p class="task-card__desc <?= $isOverdue ? 'task-card__desc--overdue' : '' ?>">
+                <p class="task-card__desc <?= $isOverdue ? 'task-card__desc--overdue' : '' ?>" data-search-desc>
                     <?= nl2br(htmlspecialchars($task['description'])) ?>
                 </p>
             <?php endif; ?>

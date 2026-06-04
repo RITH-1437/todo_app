@@ -3,15 +3,13 @@
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Wire up submit handlers for all comment forms on the page.
-    document.querySelectorAll('.comment-form').forEach(form => {
-        form.addEventListener('submit', handleCommentSubmit);
+    document.addEventListener('submit', event => {
+        if (event.target.closest('.comment-form')) {
+            handleCommentSubmit(event);
+        }
     });
 
-    // Delegate edit / delete clicks so dynamically inserted cards work too.
-    document.querySelectorAll('.comments-list').forEach(list => {
-        list.addEventListener('click', handleCommentAction);
-    });
+    document.addEventListener('click', handleCommentAction);
 });
 
 // ── Submit new comment ────────────────────────────────────────────────────────
@@ -19,7 +17,9 @@ document.addEventListener('DOMContentLoaded', () => {
 async function handleCommentSubmit(event) {
     event.preventDefault();
 
-    const form     = event.currentTarget;
+    const form     = event.target.closest('.comment-form');
+    if (!form) return;
+
     const input    = form.querySelector('.comment-input');
     const button   = form.querySelector('.comment-submit');
     const taskCard = form.closest('.task-card');

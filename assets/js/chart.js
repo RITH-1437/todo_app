@@ -30,6 +30,19 @@ window.updateTaskChartTheme = function (theme) {
     taskChart.update();
 };
 
+window.updateTaskChartCounts = function (completed, pending, overdue) {
+    if (!taskChart) {
+        return;
+    }
+
+    taskChart.data.datasets[0].data = [
+        Number.parseInt(completed, 10) || 0,
+        Number.parseInt(pending, 10) || 0,
+        Number.parseInt(overdue, 10) || 0
+    ];
+    taskChart.update();
+};
+
 if (ctx) {
     // Get task counts from the DOM
     const completedElement = document.querySelector('#completed-card [data-stat-value]');
